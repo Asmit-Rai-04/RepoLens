@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { ReactFlow, Background, Controls, Handle, MiniMap, Position, type Edge, type Node, type NodeProps } from "@xyflow/react";
+import { useEffect, useMemo, useRef } from "react";
+import { ReactFlow, ReactFlowProvider, Background, Controls, Handle, MiniMap, Position, useReactFlow, type Edge, type Node, type NodeProps } from "@xyflow/react";
 import dagre from "@dagrejs/dagre";
 import "@xyflow/react/dist/style.css";
 import type { DependencyGraphResult } from "../lib/api/graph-types";
@@ -50,20 +50,51 @@ function layout(nodes: DependencyNode[], edges: Edge[]): DependencyNode[] {
   });
 }
 
+/**
+ * Re-fits the viewport when the rendered node set changes.
+ *
+ * The `fitView` prop only applies on mount, so switching a filter (e.g. ALL → CYCLES) used to
+ * swap in a much smaller re-laid-out graph while the viewport stayed fitted to the old layout —
+ * the new nodes sat outside the visible pane and the canvas looked blank. The signature covers
+ * the node ids and edge count, so unrelated re-renders keep the user's viewport. The first
+ * render is skipped on purpose: the `fitView` prop already fits on mount, and an early
+ * programmatic fit would race and reset it.
+ */
+function FitOnChange({ signature }: { signature: string }) {
+  const { fitView } = useReactFlow();
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    // React Flow measures the DOM in its own effects; a short delay lets the new layout settle.
+    const timer = window.setTimeout(() => {
+      void fitView({ padding: 0.15, duration: 200, maxZoom: 1.8 }).catch(() => undefined);
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [signature, fitView]);
+  return null;
+}
+
 export function DependencyGraphCanvas({ graph, cycleIds, focusedIds, onSelect }: { graph: DependencyGraphResult; cycleIds: Set<string>; focusedIds: Set<string> | null; onSelect: (id: string) => void }) {
   const flow = useMemo(() => {
     const edges = transformEdges(graph, cycleIds, focusedIds);
     const nodes = layout(transformNodes(graph, cycleIds, focusedIds), edges);
     return { nodes, edges };
   }, [graph, cycleIds, focusedIds]);
+  const signature = useMemo(() => `${flow.nodes.map((node) => node.id).join("\n")}#${flow.edges.length}`, [flow]);
 
   return (
     <div className="dependency-canvas" aria-label="Interactive file dependency graph">
-      <ReactFlow nodes={flow.nodes} edges={flow.edges} nodeTypes={nodeTypes} fitView minZoom={0.25} maxZoom={1.8} nodesDraggable nodesConnectable={false} onNodeClick={(_, node) => onSelect(node.id)}>
-        <Background gap={24} size={1} color="#27272A" />
-        <Controls position="bottom-left" />
-        <MiniMap pannable zoomable nodeColor={(node: DependencyFlowNode) => nodeColorFor(node.id, graph)} />
-      </ReactFlow>
+      <ReactFlowProvider>
+        <ReactFlow nodes={flow.nodes} edges={flow.edges} nodeTypes={nodeTypes} fitView minZoom={0.25} maxZoom={1.8} nodesDraggable nodesConnectable={false} onNodeClick={(_, node) => onSelect(node.id)}>
+          <FitOnChange signature={signature} />
+          <Background gap={24} size={1} color="#27272A" />
+          <Controls position="bottom-left" />
+          <MiniMap pannable zoomable nodeColor={(node: DependencyFlowNode) => nodeColorFor(node.id, graph)} />
+        </ReactFlow>
+      </ReactFlowProvider>
     </div>
   );
 }
