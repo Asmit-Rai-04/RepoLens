@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+.pytest-tmp*/
+
+# Local environment files (placeholders live in .env.example)
+.env
+.env.*
+!.env.example
+
+# Logs, PID files, OS/editor noise
+*.log
+*.pid
+.DS_Store
+.idea/
+.vscode/
+
+# Frontend build artifacts and dependencies
+frontend/node_modules/
+frontend/.next/
+frontend/coverage/
+frontend/tsconfig.tsbuildinfo
+frontend/next-env.d.ts
+
+# Temporary analysis state from local runs
+.analysis-id
+.ts-id
+.k8s-id
+.analyze.sh
+
+# Local verification harnesses and tooling artifacts (not part of the app)
+.verification/
+.freebuff/
+
+# Backend temp workspaces
+backend/.tmp/
