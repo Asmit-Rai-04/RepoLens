@@ -1,5 +1,6 @@
 import type { DependencyGraphResult, GraphEdge, GraphNode, GraphNodeType, NodeMetrics } from "../api/graph-types";
 import type { Edge, Node } from "@xyflow/react";
+import { computeEdgeWeights, type EdgeWeight } from "./layout";
 
 export type GraphFilter = "ALL" | "CYCLES" | "UNRESOLVED" | "EXTERNAL" | "IMPORTANT";
 
@@ -17,6 +18,8 @@ export interface DependencyNodeData extends Record<string, unknown> {
   metrics: NodeMetrics | null;
   cycle: boolean;
   focused: boolean;
+  /** 1 = leaf/background node, 2 = notable, 3 = structurally important (drives size). */
+  weight: 1 | 2 | 3;
 }
 
 export type DependencyNode = Node<DependencyNodeData, "dependency">;
@@ -24,6 +27,10 @@ export type DependencyNode = Node<DependencyNodeData, "dependency">;
 /** Data carried by a renderable dependency edge; the backend edge is preserved verbatim. */
 export interface DependencyEdgeData extends Record<string, unknown> {
   edge: GraphEdge;
+  /** 1 = subtle background wiring, 2 = notable, 3 = structurally significant. */
+  weight: 1 | 2 | 3;
+  /** True when the edge closes a backend-detected cycle. */
+  cycle: boolean;
 }
 
 export type DependencyEdge = Edge<DependencyEdgeData>;
@@ -129,7 +136,7 @@ export function capGraph(graph: DependencyGraphResult, limit: number, preferred:
   return { nodes, edges, metrics: graph.metrics.node_metrics, truncated: nodes.length < graph.nodes.length, totalNodeCount: graph.nodes.length };
 }
 
-export function transformNodes(graph: DependencyGraphResult, cycleIds = new Set<string>(), focusedIds: Set<string> | null = null): DependencyNode[] {
+export function transformNodes(graph: DependencyGraphResult, cycleIds = new Set<string>(), focusedIds: Set<string> | null = null, importantIds: Set<string> | null = null): DependencyNode[] {
   return graph.nodes.map((node) => ({
     id: node.id,
     type: "dependency" as const,
@@ -139,22 +146,34 @@ export function transformNodes(graph: DependencyGraphResult, cycleIds = new Set<
       cycle: cycleIds.has(node.id),
       focused: focusedIds ? focusedIds.has(node.id) : true,
       metrics: graph.metrics.node_metrics[node.id] ?? null,
+      weight: nodeWeight(node, importantIds),
     },
   }));
 }
 
+/** Node visual weight mirrors the edge hierarchy: importance from the backend only. */
+function nodeWeight(node: GraphNode, importantIds: Set<string> | null): 1 | 2 | 3 {
+  if (importantIds && importantIds.has(node.id)) return 3;
+  if (node.node_type !== "file") return 1;
+  return 2;
+}
+
 export function transformEdges(graph: DependencyGraphResult, cycleIds = new Set<string>(), focusedIds: Set<string> | null = null): DependencyEdge[] {
+  const weights = computeEdgeWeights(graph);
   return graph.edges.map((edge, index) => {
     const inFocus = !focusedIds || (focusedIds.has(edge.source) && focusedIds.has(edge.target));
-    const cycleEdge = cycleIds.has(edge.source) && cycleIds.has(edge.target);
+    const { weight, cycle: cycleEdge } = weights[index];
     return {
       id: `dependency-${index}-${edge.source}-${edge.target}`,
       source: edge.source,
       target: edge.target,
-      label: edge.edge_type,
-      className: ["dependency-edge", `edge-${edge.edge_type.toLowerCase()}`, !edge.resolved ? "edge-unresolved" : "", cycleEdge ? "edge-cycle" : "", inFocus ? "" : "edge-dim"].filter(Boolean).join(" "),
-      data: { edge },
+      data: { edge, weight, cycle: cycleEdge },
+      className: ["dependency-edge", `edge-${edge.edge_type.toLowerCase()}`, !edge.resolved ? "edge-unresolved" : "", cycleEdge ? "edge-cycle" : "", inFocus ? "" : "edge-dim", weightClass(weight)].filter(Boolean).join(" "),
       animated: cycleEdge,
     };
   });
+}
+
+function weightClass(weight: 1 | 2 | 3): string {
+  return weight === 3 ? "edge-strong" : weight === 2 ? "edge-medium" : "";
 }

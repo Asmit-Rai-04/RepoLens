@@ -1,4 +1,5 @@
 import type { OverviewResponse } from "../lib/api/types";
+import { AnalysisNav } from "./AnalysisNav";
 
 export function Overview({ data }: { data: OverviewResponse }) {
   const languageEntries = Object.entries(data.files.by_language).sort((a, b) => b[1] - a[1]);
@@ -6,6 +7,8 @@ export function Overview({ data }: { data: OverviewResponse }) {
   const partial = completeness?.status === "partial";
   return (
     <>
+      <AnalysisNav />
+
       {partial && completeness && (
         <section className="section" aria-label="Partial analysis notice">
           <div className="panel partial-notice" role="note">
@@ -31,7 +34,7 @@ export function Overview({ data }: { data: OverviewResponse }) {
       )}
       <section className="overview-grid" aria-labelledby="overview-heading">
         <div className="panel">
-          <h2 id="overview-heading">Repository</h2>
+          <h2 id="overview-heading"><span className="kicker-accent">REPOSITORY</span> / IDENTITY</h2>
           <h1 className="repo-name">{data.repository.owner}/{data.repository.name}</h1>
           <div className="repo-meta">
             <span>{data.repository.default_branch}</span>
@@ -43,7 +46,7 @@ export function Overview({ data }: { data: OverviewResponse }) {
         </div>
 
         <div className="panel">
-          <h2>Architecture</h2>
+          <h2><span className="kicker-accent">ARCHITECTURE</span> / DETECTED</h2>
           <p className="architecture-name">{data.architecture.name}</p>
           <div className="confidence">
             <span className="confidence-value">{Math.round(data.architecture.confidence * 100)}%</span>
@@ -54,7 +57,7 @@ export function Overview({ data }: { data: OverviewResponse }) {
       </section>
 
       <section className="section" aria-labelledby="repository-metrics">
-        <div className="metric-row" id="repository-metrics">
+        <div className="metric-field" id="repository-metrics">
           <div className="metric"><div className="metric-label">Source files</div><div className="metric-value">{data.files.source_total}</div></div>
           <div className="metric"><div className="metric-label">Files discovered</div><div className="metric-value">{data.files.total}</div></div>
           <div className="metric"><div className="metric-label">Architecture violations</div><div className="metric-value">{data.violations}</div></div>
@@ -66,7 +69,7 @@ export function Overview({ data }: { data: OverviewResponse }) {
       </section>
 
       <section className="section" aria-labelledby="languages-heading">
-        <h2 id="languages-heading" className="section-title">Languages</h2>
+        <h2 id="languages-heading" className="section-title"><span className="kicker-accent">LANGUAGE</span> / DISTRIBUTION</h2>
         <div className="language-list">
           {languageEntries.map(([language, count]) => (
             <div className="language-item" key={language}>

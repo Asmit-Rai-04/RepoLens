@@ -4,6 +4,7 @@ import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { BrandHeader } from "../../../../../components/BrandHeader";
+import { AnalysisNav } from "../../../../../components/AnalysisNav";
 import { ApiError, getFile, getSource } from "../../../../../lib/api/client";
 import type { FileDetailResponse, SourceResponse, SymbolInfo } from "../../../../../lib/api/file-types";
 import { analysisHref, fileHref } from "../../../../../lib/routes";
@@ -64,6 +65,7 @@ export default function FilePage({ params }: { params: Promise<{ id: string; pat
       <BrandHeader />
       <main className="file-page">
         <div className="container">
+          <AnalysisNav />
           <nav className="breadcrumb" aria-label="Breadcrumb">
             <Link href={analysisHref(id, "/architecture")}>Architecture</Link>
             <span>/</span>
@@ -89,7 +91,7 @@ export default function FilePage({ params }: { params: Promise<{ id: string; pat
             <>
               <div className="file-page-header">
                 <div>
-                  <div className="page-kicker">File inspector</div>
+                  <div className="page-kicker"><span className="kicker-accent">SOURCE</span> / INSPECTOR</div>
                   <h1 className="file-path-title"><code>{detail.source_file.path}</code></h1>
                   <div className="file-meta-line">
                     <span>{detail.source_file.language?.toUpperCase() ?? "UNKNOWN"}</span>

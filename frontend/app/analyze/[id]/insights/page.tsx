@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BrandHeader } from "../../../../components/BrandHeader";
+import { AnalysisNav } from "../../../../components/AnalysisNav";
 import { InsightsDashboard } from "../../../../components/InsightsDashboard";
 import { ApiError, getInsights } from "../../../../lib/api/client";
 import type { InsightsReport } from "../../../../lib/api/intelligence-types";
@@ -26,6 +27,7 @@ export default function InsightsPage() {
       <BrandHeader />
       <main className="overview-page insights-page">
         <div className="container">
+          <AnalysisNav />
           {error ? (
             <div className="error-panel" role="alert">
               <div className="page-kicker">Repository intelligence</div>

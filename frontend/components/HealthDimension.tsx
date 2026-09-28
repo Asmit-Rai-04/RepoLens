@@ -3,10 +3,9 @@ import type { HealthDimension as HealthDimensionData } from "../lib/api/intellig
 export function HealthDimension({ name, dimension }: { name: string; dimension: HealthDimensionData }) {
   const metricEntries = Object.entries(dimension.metrics).slice(0, 4);
   return (
-    <section className="health-dimension" aria-labelledby={`health-${name}`}>
+    <section className={`health-dimension status-${dimension.status}`} aria-labelledby={`health-${name}`}>
       <div className="health-dimension-head">
         <div>
-          <div className="section-kicker">Health dimension</div>
           <h2 id={`health-${name}`}>{name}</h2>
         </div>
         <div className="health-dimension-score">
@@ -14,6 +13,7 @@ export function HealthDimension({ name, dimension }: { name: string; dimension: 
           <span>/ 100</span>
         </div>
       </div>
+      <div className="dimension-meter" aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, dimension.score))}%` }} /></div>
       <div className={`status-pill status-${dimension.status}`}><span aria-hidden="true" className="status-dot" />{dimension.status}</div>
       <p className="health-dimension-explanation">{dimension.explanation}</p>
       {metricEntries.length ? (

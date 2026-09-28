@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { BrandHeader } from "../../../../components/BrandHeader";
+import { AnalysisNav } from "../../../../components/AnalysisNav";
 import { ArchitectureGraph } from "../../../../components/ArchitectureGraph";
 import { ApiError, getArchitecture } from "../../../../lib/api/client";
 import type { ArchitectureResponse } from "../../../../lib/api/architecture-types";
@@ -51,9 +52,10 @@ export default function ArchitecturePage({ params }: { params: Promise<{ id: str
       <BrandHeader />
       <main className="overview-page">
         <div className="container architecture-page-shell">
+          <AnalysisNav />
           <div className="page-header architecture-page-header">
             <div>
-              <div className="page-kicker">Architecture · {data.report.primary.architecture}</div>
+              <div className="page-kicker"><span className="kicker-accent">ARCHITECTURE</span> / MAP · {data.report.primary.architecture}</div>
               <h1>How the codebase is layered.</h1>
               <p className="page-lede">{data.report.summary}</p>
             </div>

@@ -79,7 +79,8 @@ describe("CYCLES filter regression (pycycle blank canvas)", () => {
     // the live browser is covered by the CDP verification of the same repository).
     expect(container.querySelectorAll(".react-flow__node")).toHaveLength(2);
     expect(container.querySelectorAll(".dependency-node.is-cycle")).toHaveLength(2);
-    const cycleNodeNames = [...container.querySelectorAll(".dependency-node.is-cycle code")].map((el) => el.textContent);
-    expect(cycleNodeNames).toEqual(expect.arrayContaining(CYCLE_FILES));
+    // Compact nodes render the file name; the full path lives on the title tooltip.
+    const cycleNodes = [...container.querySelectorAll(".dependency-node.is-cycle")];
+    expect(cycleNodes.map((el) => el.getAttribute("title"))).toEqual(expect.arrayContaining(CYCLE_FILES));
   });
 });

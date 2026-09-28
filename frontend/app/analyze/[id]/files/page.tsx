@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { BrandHeader } from "../../../../components/BrandHeader";
+import { AnalysisNav } from "../../../../components/AnalysisNav";
 import { RepositoryExplorer } from "../../../../components/RepositoryExplorer";
 import { ApiError, listFiles } from "../../../../lib/api/client";
 import type { FileSummary } from "../../../../lib/api/file-types";
@@ -30,15 +31,11 @@ export default function FilesPage({ params }: { params: Promise<{ id: string }> 
       <BrandHeader />
       <main className="explorer-page">
         <div className="container">
-          <nav className="breadcrumb" aria-label="Breadcrumb">
-            <Link href={`/analyze/${encodeURIComponent(id)}/architecture`}>Architecture</Link>
-            <span>/</span>
-            <span>Modules</span>
-          </nav>
+          <AnalysisNav />
 
           <div className="page-header explorer-header">
             <div>
-              <div className="page-kicker">Repository explorer</div>
+              <div className="page-kicker"><span className="kicker-accent">REPOSITORY</span> / EXPLORER</div>
               <h1>Modules and files.</h1>
               <p className="page-lede">Move from architecture layers into the actual files and symbols that compose them.</p>
             </div>

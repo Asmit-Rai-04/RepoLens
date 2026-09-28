@@ -36,7 +36,7 @@ export function InsightsDashboard({ analysisId, report }: { analysisId: string; 
     <div className="insights-layout">
       <header className="insights-score-block">
         <div>
-          <div className="page-kicker">Repository intelligence</div>
+          <div className="page-kicker"><span className="kicker-accent">REPOSITORY</span> / INTELLIGENCE</div>
           <h1>Health &amp; insights.</h1>
           <p className="page-lede">Every score and finding below is derived from the completed repository analysis. No generated or inferred repository facts are added.</p>
         </div>
@@ -55,8 +55,8 @@ export function InsightsDashboard({ analysisId, report }: { analysisId: string; 
       ) : null}
 
       <section className="insights-section" aria-labelledby="dimensions-heading">
-        <div className="section-heading-row"><div><div className="section-kicker">Weighted health</div><h2 id="dimensions-heading">Dimension breakdown</h2></div><span className="technical-count">20 / 20 / 20 / 25 / 15</span></div>
-        <div className="health-dimension-grid">
+        <div className="section-heading-row"><div><div className="section-kicker">WEIGHTED HEALTH</div><h2 id="dimensions-heading">Dimension breakdown</h2></div><span className="technical-count">20 / 20 / 20 / 25 / 15</span></div>
+        <div className="dimension-field">
           <HealthDimension name="Parse" dimension={dimensions.parse} />
           <HealthDimension name="Imports" dimension={dimensions.imports} />
           <HealthDimension name="Cycles" dimension={dimensions.cycles} />

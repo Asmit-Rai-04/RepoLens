@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { use, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BrandHeader } from "../../../components/BrandHeader";
+import { AnalysisNav } from "../../../components/AnalysisNav";
 import { StageList } from "../../../components/StageList";
 import { useAnalysis } from "../../../hooks/useAnalysis";
 
@@ -55,7 +56,7 @@ export default function AnalysisProgressPage({ params }: { params: Promise<{ id:
           <div className="container">
             <div className="page-header">
               <div>
-                <div className="page-kicker">Analysis failed</div>
+                <div className="page-kicker"><span className="kicker-accent">ANALYSIS</span> / FAILED</div>
                 <h1>Repository analysis stopped.</h1>
               </div>
               <div className="page-actions"><Link href="/" className="text-link">Analyze Another Repository</Link></div>
@@ -75,9 +76,10 @@ export default function AnalysisProgressPage({ params }: { params: Promise<{ id:
       <BrandHeader />
       <main className="progress-page">
         <div className="container">
+          <AnalysisNav />
           <div className="page-header">
             <div>
-              <div className="page-kicker">Analysis in progress</div>
+              <div className="page-kicker"><span className="kicker-accent">ANALYSIS</span> / RUNNING · {data.stage.replaceAll("_", " ").toUpperCase()}</div>
               <h1>Reading the repository.</h1>
             </div>
             <div className="page-actions">
@@ -85,7 +87,7 @@ export default function AnalysisProgressPage({ params }: { params: Promise<{ id:
             </div>
           </div>
           <section className="progress-frame" aria-labelledby="progress-heading">
-            <h2 id="progress-heading" className="section-title">Pipeline</h2>
+            <h2 id="progress-heading" className="section-title"><span className="kicker-accent">PIPELINE</span> / STAGES</h2>
             <StageList stage={data.stage} />
             {networkError ? <p className="form-error" role="status">{networkError} Retrying…</p> : null}
           </section>
@@ -94,4 +96,3 @@ export default function AnalysisProgressPage({ params }: { params: Promise<{ id:
     </>
   );
 }
-

@@ -63,10 +63,16 @@ export default function OverviewPage({ params }: { params: Promise<{ id: string 
         <div className="container">
           <div className="page-header">
             <div>
-              <div className="page-kicker">Analysis complete</div>
+              <div className="page-kicker"><span className="kicker-accent">REPORT</span> / COMPLETE</div>
               <h1>Repository overview.</h1>
             </div>
-            <div className="page-actions"><Link href={`/analyze/${encodeURIComponent(id)}/architecture`} className="text-link">Open architecture map</Link><Link href={`/analyze/${encodeURIComponent(id)}/graph`} className="text-link">Open dependency graph</Link><Link href={`/analyze/${encodeURIComponent(id)}/files`} className="text-link">Explore repository</Link><Link href={`/analyze/${encodeURIComponent(id)}/insights`} className="text-link">Health &amp; insights</Link><Link href="/" className="text-link">Analyze Another Repository</Link></div>
+            <nav className="action-rail" aria-label="Report actions">
+              <Link href={`/analyze/${encodeURIComponent(id)}/architecture`} className="action-link"><span>ARCHITECTURE</span><span className="action-arrow" aria-hidden="true">↗</span></Link>
+              <Link href={`/analyze/${encodeURIComponent(id)}/graph`} className="action-link"><span>DEPENDENCY GRAPH</span><span className="action-arrow" aria-hidden="true">↗</span></Link>
+              <Link href={`/analyze/${encodeURIComponent(id)}/files`} className="action-link"><span>FILES</span><span className="action-arrow" aria-hidden="true">↗</span></Link>
+              <Link href={`/analyze/${encodeURIComponent(id)}/insights`} className="action-link"><span>INSIGHTS</span><span className="action-arrow" aria-hidden="true">↗</span></Link>
+              <Link href="/" className="action-link primary"><span>ANALYZE ANOTHER REPOSITORY</span><span className="action-arrow" aria-hidden="true">↗</span></Link>
+            </nav>
           </div>
           <Overview data={data} />
         </div>

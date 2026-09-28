@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import FilePage from "../app/analyze/[id]/files/[...path]/page";
 
-vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams("symbol=helper") }));
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams("symbol=helper"),
+  useParams: () => ({ id: "test-id" }),
+  usePathname: () => "/analyze/test-id/files/x",
+}));
 vi.mock("next/link", () => ({ default: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a {...props}>{children}</a> }));
 vi.mock("../components/BrandHeader", () => ({ BrandHeader: () => <header>RepoLens</header> }));
 vi.mock("../lib/api/client", () => ({
