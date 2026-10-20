@@ -160,11 +160,15 @@ function nodeWeight(node: GraphNode, importantIds: Set<string> | null): 1 | 2 | 
 
 export function transformEdges(graph: DependencyGraphResult, cycleIds = new Set<string>(), focusedIds: Set<string> | null = null): DependencyEdge[] {
   const weights = computeEdgeWeights(graph);
+  const occurrences = new Map<string, number>();
   return graph.edges.map((edge, index) => {
+    const key = JSON.stringify([edge.source, edge.target, edge.edge_type, edge.import_evidence]);
+    const occurrence = occurrences.get(key) ?? 0;
+    occurrences.set(key, occurrence + 1);
     const inFocus = !focusedIds || (focusedIds.has(edge.source) && focusedIds.has(edge.target));
     const { weight, cycle: cycleEdge } = weights[index];
     return {
-      id: `dependency-${index}-${edge.source}-${edge.target}`,
+      id: `dependency-${key}-${occurrence}`,
       source: edge.source,
       target: edge.target,
       data: { edge, weight, cycle: cycleEdge },

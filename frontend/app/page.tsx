@@ -4,6 +4,8 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createAnalysis, ApiError } from "../lib/api/client";
 import styles from "./page.module.css";
+import { GraphWorkbench } from "../components/GraphWorkbench";
+import { demoGraph } from "../lib/graph/demo";
 
 function isGithubRepositoryUrl(value: string): boolean {
   try {
@@ -16,41 +18,6 @@ function isGithubRepositoryUrl(value: string): boolean {
   } catch {
     return false;
   }
-}
-
-function StructureField() {
-  return (
-    <div className={styles.landingStructure} aria-hidden="true">
-      <div className={`${styles.structureCaption} ${styles.mono}`}>DEPENDENCY FIELD / LIVE MODEL</div>
-      <svg className={styles.structureSvg} viewBox="0 0 620 390" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g className={styles.structureGridLines}>
-          <path d="M40 72H570M40 195H570M40 318H570" />
-          <path d="M104 38V350M310 38V350M516 38V350" />
-        </g>
-        <g className={styles.structureLinks}>
-          <path d="M105 112L224 72L310 142L416 94L516 151L438 248L310 218L201 282L105 236L224 72" />
-          <path d="M105 112L105 236M224 72L201 282M310 142L310 218M416 94L438 248M516 151L516 292" />
-          <path d="M201 282L310 218L516 292" />
-        </g>
-        <g className={styles.structureNodes}>
-          <circle cx="105" cy="112" r="5" /><circle cx="224" cy="72" r="5" />
-          <circle cx="310" cy="142" r="7" /><circle cx="416" cy="94" r="5" />
-          <circle cx="516" cy="151" r="5" /><circle cx="438" cy="248" r="6" />
-          <circle cx="310" cy="218" r="5" /><circle cx="201" cy="282" r="5" />
-          <circle cx="105" cy="236" r="5" /><circle cx="516" cy="292" r="5" />
-        </g>
-        <g className={`${styles.structureLabels} ${styles.mono}`}>
-          <text x="78" y="96">ENTRY</text><text x="205" y="55">CORE</text>
-          <text x="292" y="129">MODULE</text><text x="420" y="80">SERVICE</text>
-          <text x="495" y="139">EDGE</text><text x="452" y="239">CYCLE</text>
-        </g>
-        <g className={`${styles.structureReadout} ${styles.mono}`}>
-          <text x="40" y="366">NODES 10</text><text x="250" y="366">EDGES 12</text><text x="465" y="366">SCC 03</text>
-        </g>
-      </svg>
-      <div className={`${styles.structureSideNote} ${styles.mono}`}><span>01</span> TRACE</div>
-    </div>
-  );
 }
 
 export default function HomePage() {
@@ -90,7 +57,7 @@ export default function HomePage() {
       <main className={styles.landingShell}>
         <div className={styles.landingGrid} aria-hidden="true" />
         <div className={styles.landingScanlines} aria-hidden="true" />
-        <div className={styles.landingAtmosphere} aria-hidden="true" />
+
 
         <div className={`${styles.landingCoordinate} ${styles.mono}`}>00.00 / REPOSITORY ENTRY</div>
         <div className={`${styles.landingTopStatus} ${styles.mono}`}>PUBLIC REPOSITORIES <span>·</span> NO EXECUTION</div>
@@ -108,15 +75,6 @@ export default function HomePage() {
           </p>
           <div className={`${styles.heroTags} ${styles.mono}`}>
             <span>STATIC ANALYSIS</span><span>NO EXECUTION</span><span>TRACEABLE OUTPUT</span>
-          </div>
-        </section>
-
-        <section className={styles.landingVisualZone}>
-          <StructureField />
-          <div className={styles.visualCapacity}>
-            <span className={styles.mono}>ANALYZER CAPACITY</span>
-            <strong className={styles.mono}>31K<span>+</span></strong>
-            <p>source files stress-tested in the analyzer</p>
           </div>
         </section>
 
@@ -139,7 +97,7 @@ export default function HomePage() {
                 className={`${styles.repoInput} ${styles.mono}`}
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
-                placeholder="github.com/user/repository"
+                placeholder="https://github.com/owner/repository"
                 autoComplete="url"
                 inputMode="url"
                 aria-describedby={error ? "repository-url-error" : "command-help"}
@@ -151,8 +109,10 @@ export default function HomePage() {
               </button>
             </div>
             {error ? <p id="repository-url-error" className={`${styles.formError} ${styles.mono}`} role="alert">ERR / {error}</p> : null}
-            <p id="command-help" className={`${styles.commandHelp} ${styles.mono}`}>AST <i>→</i> dependency graph <i>→</i> architecture signals</p>
+            <p id="command-help" className={`${styles.commandHelp} ${styles.mono}`}>Accepted: https://github.com/owner/repository · Live analysis may take time.</p>
+            {submitting ? <p role="status" className={styles.commandHelp}>Submitting repository to the analyzer…</p> : null}
           </form>
+          <div className={styles.examples}><span>Live examples:</span>{["pallets/flask", "encode/httpx"].map(repo => <button key={repo} type="button" disabled={submitting} onClick={() => { setUrl(`https://github.com/${repo}`); setError(null); document.getElementById("repository-url")?.focus(); }}>{repo}</button>)}<span>Fill the input, then trace.</span></div>
 
           <div className={styles.pipeline} aria-label="Analysis pipeline">
             <div className={styles.pipelineLine} aria-hidden="true"><span /><span /><span /></div>
@@ -162,6 +122,7 @@ export default function HomePage() {
             <div className={`${styles.pipelineNote} ${styles.mono}`}>REPOSITORY <span>→</span> STRUCTURAL MODEL <span>→</span> EXPLANATION</div>
           </div>
         </section>
+        <section className={styles.landingDemoZone} aria-label="Instant local demo"><GraphWorkbench graph={demoGraph} demo /></section>
       </main>
     </>
   );

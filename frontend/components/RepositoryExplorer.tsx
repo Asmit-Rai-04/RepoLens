@@ -1,6 +1,8 @@
+"use client";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import type { FileSummary } from "../lib/api/file-types";
-import { fileHref } from "../lib/routes";
+import { fileHref, graphHref } from "../lib/routes";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -13,8 +15,10 @@ function displayLanguage(language: string | null): string {
 }
 
 export function RepositoryExplorer({ files, analysisId }: { files: FileSummary[]; analysisId: string }) {
+  const [query, setQuery] = useState("");
+  const visible = useMemo(() => files.filter(file => `${file.path} ${file.language ?? ""} ${file.layer ?? ""}`.toLowerCase().includes(query.trim().toLowerCase())), [files, query]);
   const grouped = new Map<string, FileSummary[]>();
-  files.forEach((file) => {
+  visible.forEach((file) => {
     const key = file.layer ?? "Unclassified";
     const items = grouped.get(key) ?? [];
     items.push(file);
@@ -30,16 +34,18 @@ export function RepositoryExplorer({ files, analysisId }: { files: FileSummary[]
           <div className="section-kicker">Modules</div>
           <h2 id="modules-heading">Repository files</h2>
         </div>
-        <div className="technical-count">{files.length} files</div>
+        <div className="technical-count" role="status">{visible.length} / {files.length} files</div>
       </div>
 
+      <label className="file-explorer-search">Search repository files<input value={query} onChange={event => setQuery(event.target.value)} placeholder="Path, language, or architecture layer" /></label>
+      {!visible.length ? <p role="status">No matching files.</p> : null}
       <div className="module-groups">
         {layers.map(([layer, items]) => (
-          <section className="module-group" key={layer} aria-labelledby={`module-${layer}`}>
-            <div className="module-group-header">
+          <details open className="module-group" key={layer} aria-labelledby={`module-${layer}`}>
+            <summary className="module-group-header">
               <h3 id={`module-${layer}`}>{layer}</h3>
               <span>{items.length} files</span>
-            </div>
+            </summary>
             <ul className="file-table">
               {items.sort((a, b) => a.path.localeCompare(b.path)).map((file) => (
                 <li key={file.path}>
@@ -55,10 +61,11 @@ export function RepositoryExplorer({ files, analysisId }: { files: FileSummary[]
                       <span>{formatBytes(file.size_bytes)}</span>
                     </span>
                   </Link>
+                  <Link href={graphHref(analysisId, { file: file.path, focus: "focus" })} className="file-graph-link">Dependencies →</Link>
                 </li>
               ))}
             </ul>
-          </section>
+          </details>
         ))}
       </div>
     </section>

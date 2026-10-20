@@ -228,7 +228,6 @@ export function computeEdgeWeights(graph: DependencyGraphResult): EdgeWeight[] {
       const source = cycle.files[i];
       const target = cycle.files[(i + 1) % cycle.files.length];
       cyclePairs.add(`${source}->${target}`);
-      cyclePairs.add(`${target}->${source}`);
     }
   }
   // Reverse-importance lookup: the most important nodes per backend ranking.

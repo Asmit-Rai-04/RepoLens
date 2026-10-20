@@ -37,6 +37,7 @@ export function AnalysisNav() {
           </Link>
         );
       })}
+      <Link href="/" className="analysis-nav-item mono">ANALYZE ANOTHER</Link>
     </nav>
   );
 }

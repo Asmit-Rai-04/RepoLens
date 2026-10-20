@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 describe("dependency graph UI requirements", () => {
-  const source = readFileSync(join(process.cwd(), "app/analyze/[id]/graph/page.tsx"), "utf8");
+  const source = ["app/analyze/[id]/graph/page.tsx", "components/GraphWorkbench.tsx", "components/GraphToolbar.tsx", "components/GraphInspector.tsx"].map(path => readFileSync(join(process.cwd(), path), "utf8")).join("\n");
   const css = readFileSync(join(process.cwd(), "app/globals.css"), "utf8");
 
   it("contains all required filters, focus surfaces, and file inspector navigation", () => {
