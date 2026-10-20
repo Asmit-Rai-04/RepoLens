@@ -137,3 +137,42 @@
   .pipelineStep small { font-size:8px; }
   .pipelineNote { font-size:8px; bottom:0; left:0; right:auto; }
 }
+
+/* The command surface and a working graph form the landing experience. */
+.landingShell { display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.65fr); grid-template-rows:auto auto; gap:24px 32px; padding:28px 3vw 48px; background:#09090b; }
+.landingCoordinate,.landingTopStatus { display:none; }
+.landingTitleZone { grid-column:1; grid-row:1; padding:8px 0; }
+.landingTitleZone h1 { font-size:clamp(36px,3.5vw,54px); line-height:1.05; }
+.titleMono { font-size:clamp(34px,3.4vw,52px); margin-left:4vw; }
+.titleLast { margin-left:0; }
+.heroCopy { font-size:14px; margin:24px 0 0; }
+.heroTags,.commandHelp,.pipelineStep small,.headerRight { color:#a1a1aa; }
+.landingCommandZone { grid-column:1; grid-row:2; margin:0; align-self:start; padding:24px 0; }
+.terminalField { grid-template-columns:max-content minmax(0,1fr); border:1px solid #3f3f46; padding:12px; gap:8px; }
+.terminalPrefix { padding:0; }
+.repoInput { font-size:12px; height:44px; }
+.commandSubmit { grid-column:1/3; width:100%; }
+.commandHelp { font-size:11px; line-height:1.8; }
+.formError { font-size:12px; }
+.landingDemoZone { grid-column:2; grid-row:1 / span 2; min-width:0; }
+.examples { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:16px; color:#a1a1aa; font-size:11px; }
+.examples button { background:#121215; color:#f4f4f5; border:1px solid #27272a; padding:6px 10px; }
+.pipelineNote { display:none; }
+.pipeline { display:none; }
+@media(min-width:769px) and (max-width:1100px) {
+ .landingShell { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+ .landingTitleZone { grid-column:1; grid-row:1; }
+ .landingCommandZone { grid-column:2; grid-row:1; }
+ .landingDemoZone { grid-column:1/-1; grid-row:2; }
+}
+@media(max-width:768px) {
+ .landingShell { display:flex; flex-direction:column; padding:24px 16px; gap:24px; }
+ .landingTopStatus { display:none; }
+ .landingTitleZone { padding:8px 0; }
+ .landingTitleZone h1 { font-size:52px; }
+ .titleMono { font-size:48px; }
+ .landingCommandZone { width:100%; }
+ .heroCopy { margin-left:0; }
+ .landingDemoZone { width:100%; }
+ .pipeline { height:85px; }
+}

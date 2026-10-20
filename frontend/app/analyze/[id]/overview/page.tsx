@@ -64,7 +64,7 @@ export default function OverviewPage({ params }: { params: Promise<{ id: string 
           <div className="page-header">
             <div>
               <div className="page-kicker"><span className="kicker-accent">REPORT</span> / COMPLETE</div>
-              <h1>Repository overview.</h1>
+              <h1>{data.repository.owner}/{data.repository.name}</h1>
             </div>
             <nav className="action-rail" aria-label="Report actions">
               <Link href={`/analyze/${encodeURIComponent(id)}/architecture`} className="action-link"><span>ARCHITECTURE</span><span className="action-arrow" aria-hidden="true">↗</span></Link>

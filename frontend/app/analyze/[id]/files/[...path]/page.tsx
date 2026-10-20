@@ -7,7 +7,7 @@ import { BrandHeader } from "../../../../../components/BrandHeader";
 import { AnalysisNav } from "../../../../../components/AnalysisNav";
 import { ApiError, getFile, getSource } from "../../../../../lib/api/client";
 import type { FileDetailResponse, SourceResponse, SymbolInfo } from "../../../../../lib/api/file-types";
-import { analysisHref, fileHref } from "../../../../../lib/routes";
+import { analysisHref, fileHref, graphHref } from "../../../../../lib/routes";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -104,6 +104,7 @@ export default function FilePage({ params }: { params: Promise<{ id: string; pat
                   </div>
                 </div>
                 <div className="file-actions">
+                  <Link href={graphHref(id, { file: filePath, focus: "focus" })} className="text-link">Explore dependencies</Link>
                   <Link href={analysisHref(id, "/files")} className="text-link">All files</Link>
                   <button className="secondary-button compact-button" type="button" onClick={copySource}>{copied ? "Copied" : "Copy source"}</button>
                 </div>

@@ -35,7 +35,7 @@ export function Overview({ data }: { data: OverviewResponse }) {
       <section className="overview-grid" aria-labelledby="overview-heading">
         <div className="panel">
           <h2 id="overview-heading"><span className="kicker-accent">REPOSITORY</span> / IDENTITY</h2>
-          <h1 className="repo-name">{data.repository.owner}/{data.repository.name}</h1>
+          <h2 className="repo-name">{data.repository.owner}/{data.repository.name}</h2>
           <div className="repo-meta">
             <span>{data.repository.default_branch}</span>
             <span aria-hidden="true">/</span>

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import { ReactFlow, ReactFlowProvider, Background, Controls, Handle, MiniMap, Position, useReactFlow, type Edge, type Node, type NodeProps } from "@xyflow/react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ReactFlow, ReactFlowProvider, Background, Controls, Handle, MiniMap, MarkerType, Position, useReactFlow, type Edge, type Node, type NodeProps } from "@xyflow/react";
 import dagre from "@dagrejs/dagre";
 import "@xyflow/react/dist/style.css";
 import type { DependencyGraphResult } from "../lib/api/graph-types";
+import type { Visit } from "../lib/graph/workbench";
+import { densePositions } from "../lib/graph/dense-layout";
 import {
   transformEdges,
   transformNodes,
@@ -13,14 +15,14 @@ import {
 import { buildStructureGraph, computeLayers, computeModules, layerDAG, type ModuleInfo } from "../lib/graph/layout";
 
 const COMPACT_NODE_WIDTH = 210;
-const COMPACT_NODE_HEIGHT = 54;
+const COMPACT_NODE_HEIGHT = 78;
 const IMPORTANT_NODE_WIDTH = 240;
-const IMPORTANT_NODE_HEIGHT = 62;
+const IMPORTANT_NODE_HEIGHT = 86;
 
 const NODE_LABELS = { file: "FILE", external: "EXTERNAL", unresolved: "UNRESOLVED" } as const;
 type DependencyFlowNode = Node<Record<string, unknown>, "dependency">;
 
-function DependencyNodeView({ data }: NodeProps<DependencyNode>) {
+const DependencyNodeView = memo(function DependencyNodeView({ data }: NodeProps<DependencyNode>) {
   const label = NODE_LABELS[data.node.node_type];
   const classification = typeof data.node.metadata.classification === "string" ? data.node.metadata.classification : null;
   const fileName = data.node.path_name.split("/").pop() ?? data.node.path_name;
@@ -28,27 +30,30 @@ function DependencyNodeView({ data }: NodeProps<DependencyNode>) {
   const important = data.weight === 3;
   return (
     <div
-      className={`dependency-node node-${data.node.node_type}${data.cycle ? " is-cycle" : ""}${important ? " is-important" : ""}${!data.focused ? " is-dimmed" : ""}`}
+      className={`dependency-node node-${data.node.node_type}${data.cycle ? " is-cycle" : ""}${important ? " is-important" : ""}${!data.focused ? " is-dimmed" : ""}${typeof data.impactDepth === "number" && data.impactDepth > 1 ? " is-transitive" : ""}`}
       title={data.node.path_name}
     >
-      <Handle type="target" position={Position.Left} className="flow-handle" />
+      <Handle type="target" position={data.vertical ? Position.Top : Position.Left} className="flow-handle" />
       <div className="dependency-node-kicker">
         <span>{label}</span>
+        {typeof data.impactDepth === "number" && data.impactDepth > 0 ? <span>{data.impactDepth === 1 ? "DIRECT" : `DEPTH ${data.impactDepth}`}</span> : null}
         {data.cycle ? <span className="dependency-node-cycleflag">CYCLE</span> : null}
       </div>
-      <code className="dependency-node-name">{fileName}</code>
+      <code className="dependency-node-name">{data.node.id.startsWith("module:") ? data.node.path_name : fileName}</code>
       <div className="dependency-node-meta">
         <span>{directory ?? data.node.language ?? classification ?? "dependency"}</span>
         {data.metrics ? <span>#{data.metrics.rank}</span> : <span>—</span>}
       </div>
-      <Handle type="source" position={Position.Right} className="flow-handle" />
+      <Handle type="source" position={data.vertical ? Position.Bottom : Position.Right} className="flow-handle" />
     </div>
   );
-}
+});
 
 const nodeTypes = { dependency: DependencyNodeView };
 
 interface LayoutOptions {
+  compact?: boolean;
+  vertical?: boolean;
   /** Layer spacing; larger for module view so group cards breathe. */
   ranksep: number;
   nodesep: number;
@@ -59,7 +64,7 @@ interface LayoutOptions {
 function layout(nodes: DependencyNode[], edges: Edge[], options: LayoutOptions): DependencyNode[] {
   const graph = new dagre.graphlib.Graph();
   graph.setDefaultEdgeLabel(() => ({}));
-  graph.setGraph({ rankdir: "LR", ranksep: options.ranksep, nodesep: options.nodesep, marginx: 30, marginy: 30 });
+  graph.setGraph({ rankdir: options.vertical ? "TB" : "LR", ranksep: options.vertical ? 50 : options.compact ? 65 : options.ranksep, nodesep: options.compact ? 12 : options.nodesep, marginx: 30, marginy: 30 });
   nodes.forEach((node) => graph.setNode(node.id, { width: options.width(node), height: options.height(node) }));
   edges.forEach((edge) => graph.setEdge(edge.source, edge.target));
   dagre.layout(graph);
@@ -67,7 +72,7 @@ function layout(nodes: DependencyNode[], edges: Edge[], options: LayoutOptions):
     const width = options.width(node);
     const height = options.height(node);
     const point = graph.node(node.id);
-    return { ...node, position: { x: point.x - width / 2, y: point.y - height / 2 }, sourcePosition: Position.Right, targetPosition: Position.Left };
+    return { ...node, width, height, initialWidth: width, initialHeight: height, position: { x: point.x - width / 2, y: point.y - height / 2 }, sourcePosition: options.vertical ? Position.Bottom : Position.Right, targetPosition: options.vertical ? Position.Top : Position.Left };
   });
 }
 
@@ -91,27 +96,56 @@ function FitOnChange({ signature }: { signature: string }) {
     }
     // React Flow measures the DOM in its own effects; a short delay lets the new layout settle.
     const timer = window.setTimeout(() => {
-      void fitView({ padding: 0.15, duration: 200, maxZoom: 1.8 }).catch(() => undefined);
+      void fitView({ padding: 0.15, duration: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 0 : 200, maxZoom: 1.8 }).catch(() => undefined);
     }, 60);
     return () => window.clearTimeout(timer);
   }, [signature, fitView]);
   return null;
 }
 
-export function DependencyGraphCanvas({ graph, cycleIds, focusedIds, onSelect }: { graph: DependencyGraphResult; cycleIds: Set<string>; focusedIds: Set<string> | null; onSelect: (id: string) => void }) {
-  const flow = useMemo(() => {
+function SelectionControl({ selectedId }: { selectedId?: string | null }) {
+  const { fitView } = useReactFlow();
+  useEffect(() => {
+    if (!selectedId) return;
+    const timer = window.setTimeout(() => { void fitView({ nodes: [{ id: selectedId }], padding: 0.7, maxZoom: 1.3, duration: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 0 : 180 }); }, 130);
+    return () => window.clearTimeout(timer);
+  }, [selectedId, fitView]);
+  return <button type="button" className="canvas-selection secondary-button compact-button" disabled={!selectedId} onClick={() => void fitView({ nodes: selectedId ? [{ id: selectedId }] : [], padding: 0.7, maxZoom: 1.3, duration: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 0 : 180 })}>Fit selection</button>;
+}
+
+export function DependencyGraphCanvas({ graph, cycleIds, focusedIds, onSelect, selectedId, layoutMode = "hierarchical", minimap = true, impactVisits }: { graph: DependencyGraphResult; cycleIds: Set<string>; focusedIds: Set<string> | null; onSelect: (id: string) => void; selectedId?: string | null; layoutMode?: "hierarchical" | "compact"; minimap?: boolean; impactVisits?: Map<string, Visit> }) {
+  const [vertical, setVertical] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 768px)");
+    const update = () => setVertical(media.matches);
+    update(); media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  // Geometry depends only on dataset/layout. Selection and spotlight never run Dagre.
+  const geometry = useMemo(() => {
+    const structure = computeLayers(graph);
+    const dense = graph.edges.length > graph.nodes.length * 4 || [...structure.sccGroups.values()].some(members => members.length > 12);
     const importantIds = new Set(graph.importance_ranking.slice(0, Math.max(5, Math.ceil(graph.nodes.length * 0.2))));
-    const edges = transformEdges(graph, cycleIds, focusedIds);
-    const nodes = transformNodes(graph, cycleIds, focusedIds, importantIds);
-    const laid = layout(nodes, edges, {
+    const edges = transformEdges(graph, cycleIds, null).map(edge => ({ ...edge, type: dense ? "straight" : "smoothstep", animated: false, markerEnd: { type: MarkerType.ArrowClosed, color: "#a1a1aa" }, label: graph.nodes[0]?.id.startsWith("module:") ? String(edge.data?.edge.import_evidence.count ?? "") : undefined }));
+    const nodes = transformNodes(graph, cycleIds, null, importantIds).map(node => ({ ...node, data: { ...node.data, vertical } }));
+    const grid = dense ? densePositions(graph, layoutMode === "compact", vertical, structure.layers) : null;
+    const laid = grid ? nodes.map(node => ({ ...node, width: node.data.weight === 3 ? IMPORTANT_NODE_WIDTH : COMPACT_NODE_WIDTH, height: node.data.weight === 3 ? IMPORTANT_NODE_HEIGHT : COMPACT_NODE_HEIGHT, position: grid.get(node.id)!, sourcePosition: vertical ? Position.Bottom : Position.Right, targetPosition: vertical ? Position.Top : Position.Left })) : layout(nodes, edges, {
       ranksep: 120,
+      compact: layoutMode === "compact",
+      vertical,
       nodesep: 22,
       width: (node) => (node.data.weight === 3 ? IMPORTANT_NODE_WIDTH : COMPACT_NODE_WIDTH),
       height: (node) => (node.data.weight === 3 ? IMPORTANT_NODE_HEIGHT : COMPACT_NODE_HEIGHT),
     });
     return { nodes: laid, edges };
-  }, [graph, cycleIds, focusedIds]);
-  const signature = useMemo(() => `${flow.nodes.map((node) => node.id).join("\n")}#${flow.edges.length}`, [flow]);
+  }, [graph, cycleIds, layoutMode, vertical]);
+  const flow = useMemo(() => ({
+    nodes: geometry.nodes.map(node => ({ ...node, selected: node.id === selectedId, data: { ...node.data, impactDepth: impactVisits?.get(node.id)?.depth, focused: !focusedIds || focusedIds.has(node.id) } })),
+    edges: geometry.edges.map(edge => ({ ...edge, className: `${edge.className ?? ""}${focusedIds && !(focusedIds.has(edge.source) && focusedIds.has(edge.target)) ? " edge-dim" : ""}` })),
+  }), [geometry, focusedIds, selectedId, impactVisits]);
+  const colors = useMemo(() => new Map(graph.nodes.map(node => [node.id, node.node_type === "file" ? "#A1A1AA" : "#F95738"])), [graph]);
+  const select = useCallback((_: unknown, node: Node) => onSelect(node.id), [onSelect]);
+  const signature = useMemo(() => `${geometry.nodes.map((node) => node.id).join("\n")}#${geometry.edges.length}#${layoutMode}#${vertical}`, [geometry, layoutMode, vertical]);
 
   return (
     <div className="dependency-canvas" aria-label="Interactive file dependency graph">
@@ -126,19 +160,21 @@ export function DependencyGraphCanvas({ graph, cycleIds, focusedIds, onSelect }:
           defaultEdgeOptions={{ type: "smoothstep" }}
           nodesDraggable
           nodesConnectable={false}
-          onNodeClick={(_, node) => onSelect(node.id)}
+          onlyRenderVisibleElements
+          onNodeClick={select}
         >
           <FitOnChange signature={signature} />
           <Background gap={24} size={1} color="#27272A" />
           <Controls position="bottom-left" showInteractive={false} />
-          <MiniMap
+          <SelectionControl selectedId={selectedId} />
+          {minimap ? <MiniMap
             pannable
             zoomable
-            nodeColor={(node: DependencyFlowNode) => nodeColorFor(node.id, graph)}
+            nodeColor={(node: DependencyFlowNode) => colors.get(node.id) ?? "#A1A1AA"}
             nodeStrokeColor={() => "#27272A"}
             maskColor="rgba(9, 9, 11, 0.75)"
             style={{ background: "#0D0D10", border: "1px solid #27272A" }}
-          />
+          /> : null}
         </ReactFlow>
       </ReactFlowProvider>
     </div>
